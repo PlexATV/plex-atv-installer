@@ -101,18 +101,6 @@ class ATVChannel:
         installed = False
         version = None
         
-        self.ssh.sendline('dpkg -p %s' % pkgname)
-        self.ssh.prompt()
-        if not "Package: " + pkgname in self.ssh.before:
-            print "!package %s not installed" % pkgname
-            return (installed, version)
-        
-        for l in self.ssh.before.split('\n'):
-            match = re.match('^Version: (.*)$', l)
-            if match:
-                version = match.group(1).strip()
-                break
-        
         self.ssh.sendline('dpkg -s ' + pkgname)
         self.ssh.prompt()
         
@@ -121,7 +109,11 @@ class ATVChannel:
             if match:
                 if not 'not-installed' in match.group(1):
                     installed = True
-                break
+                continue
+
+            match = re.match('^Version: (.*)$', l)
+            if match:
+                version = match.group(1).strip()
         
         #print "!package %s is installed %d version %s" % (pkgname, installed, version)
         return (installed, version)
@@ -142,9 +134,10 @@ class ATVChannel:
         if do_repo_check:
             self.check_repo(branch)
         
-        print "!updating sources"
+        print "!updating sources (might take a while)"
         self.ssh.sendline('apt-get update')
-        self.ssh.prompt()
+        # this might take ages, so let's set a timeout of 10 minutes
+        self.ssh.prompt(timeout=600)
         
         print "!looking for updates"
         self.ssh.sendline('apt-get install --yes --force-yes com.plex.client-plugin')
