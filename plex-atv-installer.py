@@ -107,7 +107,7 @@ class ATVChannel:
         for l in self.ssh.before.split('\n'):
             match = re.match('^Status: (.*)$', l)
             if match:
-                if not 'not-installed' in match.group(1):
+                if not 'not-installed' in match.group(1) and not 'deinstall' in match.group(1):
                     installed = True
                 continue
 
